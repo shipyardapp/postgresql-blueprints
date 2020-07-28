@@ -60,9 +60,13 @@ def main():
     query = text(args.query)
 
     db_string = create_connection_string(args)
-    db_connection = create_engine(db_string, pool_pre_ping=True)
+    try:
+        db_connection = create_engine(db_string, pool_pre_ping=True)
+    except Exception as e:
+        print(f'Failed to connect to database {database}')
+        raise(e)
 
-    db.execute(query)
+    db_connection.execute(query)
     db_connection.dispose()
     print('Your query has been successfully executed.')
 

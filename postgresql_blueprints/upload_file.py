@@ -130,22 +130,20 @@ def upload_data(source_full_path, table_name, insert_method, db_connection):
 
 def main():
     args = get_args()
-    username = args.username
-    password = args.password
-    host = args.host
-    database = args.database
-    port = args.port
     source_file_name_match_type = args.source_file_name_match_type
     source_file_name = args.source_file_name
     source_folder_name = args.source_folder_name
     source_full_path = combine_folder_and_file_name(
         folder_name=source_folder_name, file_name=source_file_name)
-    url_parameters = args.url_parameters
     table_name = args.table_name
     insert_method = args.insert_method
 
     db_string = create_connection_string(args)
-    db_connection = create_engine(db_string, pool_pre_ping=True)
+    try:
+        db_connection = create_engine(db_string, pool_pre_ping=True)
+    except Exception as e:
+        print(f'Failed to connect to database {database}')
+        raise(e)
 
     if source_file_name_match_type == 'regex_match':
         file_names = find_all_local_file_names(source_folder_name)

@@ -111,12 +111,6 @@ def create_csv(query, db_connection, destination_file_path, file_header=True):
 
 def main():
     args = get_args()
-    username = args.username
-    password = args.password
-    host = args.host
-    database = args.database
-    port = args.port
-    url_parameters = args.url_parameters
     destination_file_name = args.destination_file_name
     destination_folder_name = args.destination_folder_name
     destination_full_path = combine_folder_and_file_name(
@@ -125,9 +119,13 @@ def main():
     query = text(args.query)
 
     db_string = create_connection_string(args)
-    db_connection = create_engine(
-        db_string, pool_pre_ping=True, execution_options=dict(
-            stream_results=True))
+    try:
+        db_connection = create_engine(
+            db_string, pool_pre_ping=True, execution_options=dict(
+                stream_results=True))
+    except Exception as e:
+        print(f'Failed to connect to database {database}')
+        raise(e)
 
     if not os.path.exists(destination_folder_name) and (
             destination_folder_name != ''):
