@@ -60,9 +60,10 @@ def main():
     query = text(args.query)
 
     db_string = create_connection_string(args)
-    db = create_engine(db_string, pool_pre_ping=True)
+    db_connection = create_engine(db_string, pool_pre_ping=True)
 
     db.execute(query)
+    db_connection.dispose()
     print('Your query has been successfully executed.')
 
 

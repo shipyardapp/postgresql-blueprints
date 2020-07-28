@@ -165,6 +165,8 @@ def main():
         upload_data(source_full_path=source_full_path, table_name=table_name,
                     insert_method=insert_method, db_connection=db_connection)
 
+    db_connection.dispose()
+
 
 if __name__ == '__main__':
     main()

@@ -139,6 +139,8 @@ def main():
         destination_file_path=destination_full_path,
         file_header=file_header)
 
+    db_connection.dispose()
+
 
 if __name__ == '__main__':
     main()
