@@ -60,7 +60,7 @@ def main():
     query = text(args.query)
 
     db_string = create_connection_string(args)
-    db = create_engine(db_string)
+    db = create_engine(db_string, pool_pre_ping=True)
 
     db.execute(query)
     print('Your query has been successfully executed.')

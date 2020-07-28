@@ -144,7 +144,7 @@ def main():
     insert_method = args.insert_method
 
     db_string = create_connection_string(args)
-    db_connection = create_engine(db_string)
+    db_connection = create_engine(db_string, pool_pre_ping=True)
 
     if source_file_name_match_type == 'regex_match':
         file_names = find_all_local_file_names(source_folder_name)

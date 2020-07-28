@@ -126,7 +126,7 @@ def main():
 
     db_string = create_connection_string(args)
     db_connection = create_engine(
-        db_string, execution_options=dict(
+        db_string, pool_pre_ping=True, execution_options=dict(
             stream_results=True))
 
     if not os.path.exists(destination_folder_name) and (
