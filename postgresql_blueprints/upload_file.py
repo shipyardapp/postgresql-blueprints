@@ -157,7 +157,6 @@ def main():
                 table_name=table_name,
                 insert_method=insert_method,
                 db_connection=db_connection)
-            print(f'{key_name} has been uploaded to {table_name}.')
 
     else:
         upload_data(source_full_path=source_full_path, table_name=table_name,
