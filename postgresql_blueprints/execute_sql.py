@@ -65,8 +65,8 @@ def main():
     except Exception as e:
         print(f'Failed to connect to database {database}')
         raise(e)
-
-    db_connection.execute(query)
+    with db_connection.connect() as conn:
+        conn.execute(query)
     db_connection.dispose()
     print('Your query has been successfully executed.')
 

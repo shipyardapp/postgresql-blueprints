@@ -118,6 +118,10 @@ def main():
     file_header = convert_to_boolean(args.file_header)
     query = text(args.query)
 
+    if not os.path.exists(destination_folder_name) and (
+            destination_folder_name != ''):
+        os.makedirs(destination_folder_name)
+
     db_string = create_connection_string(args)
     try:
         db_connection = create_engine(
@@ -127,16 +131,12 @@ def main():
         print(f'Failed to connect to database {database}')
         raise(e)
 
-    if not os.path.exists(destination_folder_name) and (
-            destination_folder_name != ''):
-        os.makedirs(destination_folder_name)
-
-    create_csv(
-        query=query,
-        db_connection=db_connection,
-        destination_file_path=destination_full_path,
-        file_header=file_header)
-
+    with db_connection.connect() as conn:
+        create_csv(
+            query=query,
+            db_connection=conn,
+            destination_file_path=destination_full_path,
+            file_header=file_header)
     db_connection.dispose()
 
 
