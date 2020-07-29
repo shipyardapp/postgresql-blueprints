@@ -126,18 +126,17 @@ def main():
     db_string = create_connection_string(args)
     try:
         db_connection = create_engine(
-            db_string, poolclass=NullPool, execution_options=dict(
+            db_string, execution_options=dict(
                 stream_results=True))
     except Exception as e:
         print(f'Failed to connect to database {args.database}')
         raise(e)
 
-    with db_connection.connect() as conn:
-        create_csv(
-            query=query,
-            db_connection=conn,
-            destination_file_path=destination_full_path,
-            file_header=file_header)
+    create_csv(
+        query=query,
+        db_connection=db_connection,
+        destination_file_path=destination_full_path,
+        file_header=file_header)
     db_connection.dispose()
 
 

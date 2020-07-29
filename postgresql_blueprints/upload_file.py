@@ -140,31 +140,30 @@ def main():
 
     db_string = create_connection_string(args)
     try:
-        db_connection = create_engine(db_string, poolclass=NullPool)
+        db_connection = create_engine(db_string)
     except Exception as e:
         print(f'Failed to connect to database {args.database}')
         raise(e)
 
-    with db_connection.connect() as conn:
-        if source_file_name_match_type == 'regex_match':
-            file_names = find_all_local_file_names(source_folder_name)
-            matching_file_names = find_all_file_matches(
-                file_names, re.compile(source_file_name))
-            print(f'{len(matching_file_names)} files found. Preparing to upload...')
+    if source_file_name_match_type == 'regex_match':
+        file_names = find_all_local_file_names(source_folder_name)
+        matching_file_names = find_all_file_matches(
+            file_names, re.compile(source_file_name))
+        print(f'{len(matching_file_names)} files found. Preparing to upload...')
 
-            for index, key_name in enumerate(matching_file_names):
-                upload_data(
-                    source_full_path=key_name,
-                    table_name=table_name,
-                    insert_method=insert_method,
-                    db_connection=conn)
-
-        else:
+        for index, key_name in enumerate(matching_file_names):
             upload_data(
-                source_full_path=source_full_path,
+                source_full_path=key_name,
                 table_name=table_name,
                 insert_method=insert_method,
-                db_connection=conn)
+                db_connection=db_connection)
+
+    else:
+        upload_data(
+            source_full_path=source_full_path,
+            table_name=table_name,
+            insert_method=insert_method,
+            db_connection=db_connection)
     db_connection.dispose()
 
 
