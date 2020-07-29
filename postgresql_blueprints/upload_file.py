@@ -1,4 +1,5 @@
 from sqlalchemy import create_engine
+from sqlalchemy.pool import NullPool
 import argparse
 import os
 import glob
@@ -140,9 +141,9 @@ def main():
 
     db_string = create_connection_string(args)
     try:
-        db_connection = create_engine(db_string, pool_pre_ping=True)
+        db_connection = create_engine(db_string, poolclass=NullPool)
     except Exception as e:
-        print(f'Failed to connect to database {database}')
+        print(f'Failed to connect to database {args.database}')
         raise(e)
 
     with db_connection.connect() as conn:
