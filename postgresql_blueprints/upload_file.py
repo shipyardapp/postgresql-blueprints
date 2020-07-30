@@ -125,7 +125,7 @@ def upload_data(source_full_path, table_name, insert_method, db_connection):
     for chunk in pd.read_csv(source_full_path, chunksize=10000):
         chunk.to_sql(table_name, con=db_connection, index=False,
                      if_exists=insert_method, method='multi', chunksize=10000)
-    print(f'{source_full_path} successfully upload to {table_name}.')
+    print(f'{source_full_path} successfully uploaded to {table_name}.')
 
 
 def main():
