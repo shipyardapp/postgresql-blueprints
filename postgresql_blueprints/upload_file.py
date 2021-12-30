@@ -41,6 +41,11 @@ def get_args():
         default=None,
         required=True)
     parser.add_argument(
+        '--schema',
+        dest='schema',
+        default=None,
+        required=False)
+    parser.add_argument(
         '--insert-method',
         dest='insert_method',
         choices={
@@ -121,11 +126,34 @@ def combine_folder_and_file_name(folder_name, file_name):
     return combined_name
 
 
-def upload_data(source_full_path, table_name, insert_method, db_connection):
+def upload_data(
+        source_full_path,
+        table_name,
+        insert_method,
+        db_connection,
+        schema):
     for chunk in pd.read_csv(source_full_path, chunksize=10000):
-        chunk.to_sql(table_name, con=db_connection, index=False,
-                     if_exists=insert_method, method='multi', chunksize=10000)
+        chunk.to_sql(
+            table_name,
+            con=db_connection,
+            index=False,
+            if_exists=insert_method,
+            method='multi',
+            chunksize=10000,
+            schema=schema)
     print(f'{source_full_path} successfully uploaded to {table_name}.')
+
+
+def create_db_connection(db_string):
+    if 'db.bit.io' in db_string:
+        db_connection = create_engine(
+            db_string,
+            isolation_level='AUTOCOMMIT')
+    else:
+        db_connection = create_engine(
+            db_string,
+            execution_options=dict(stream_results=True))
+    return db_connection
 
 
 def main():
@@ -138,9 +166,14 @@ def main():
     table_name = args.table_name
     insert_method = args.insert_method
 
+    if args.schema == '':
+        schema = None
+    else:
+        schema = args.schema
+
     db_string = create_connection_string(args)
     try:
-        db_connection = create_engine(db_string)
+        db_connection = create_db_connection(db_string)
     except Exception as e:
         print(f'Failed to connect to database {args.database}')
         raise(e)
@@ -156,14 +189,16 @@ def main():
                 source_full_path=key_name,
                 table_name=table_name,
                 insert_method=insert_method,
-                db_connection=db_connection)
+                db_connection=db_connection,
+                schema=schema)
 
     else:
         upload_data(
             source_full_path=source_full_path,
             table_name=table_name,
             insert_method=insert_method,
-            db_connection=db_connection)
+            db_connection=db_connection,
+            schema=schema)
     db_connection.dispose()
 
 

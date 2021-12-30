@@ -56,13 +56,25 @@ def create_connection_string(args):
     return db_string
 
 
+def create_db_connection(db_string):
+    if 'db.bit.io' in db_string:
+        db_connection = create_engine(
+            db_string,
+            isolation_level='AUTOCOMMIT')
+    else:
+        db_connection = create_engine(
+            db_string,
+            execution_options=dict(stream_results=True))
+    return db_connection
+
+
 def main():
     args = get_args()
     query = text(args.query)
 
     db_string = create_connection_string(args)
     try:
-        db_connection = create_engine(db_string)
+        db_connection = create_db_connection(db_string)
     except Exception as e:
         print(f'Failed to connect to database {args.database}')
         raise(e)
