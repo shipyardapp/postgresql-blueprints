@@ -165,7 +165,11 @@ def main():
         folder_name=source_folder_name, file_name=source_file_name)
     table_name = args.table_name
     insert_method = args.insert_method
-    schema = args.schema
+
+    if args.schema == '':
+        schema = None
+    else:
+        schema = args.schema
 
     db_string = create_connection_string(args)
     try:
