@@ -63,7 +63,7 @@ def create_db_connection(db_string):
             isolation_level='AUTOCOMMIT')
     else:
         db_connection = create_engine(
-            db_string))
+            db_string)
     return db_connection
 
 
