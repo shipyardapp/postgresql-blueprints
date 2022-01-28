@@ -5,6 +5,8 @@ import os
 import glob
 import re
 import pandas as pd
+import csv
+from io import StringIO
 
 
 def get_args():
@@ -86,7 +88,7 @@ def create_connection_string(args):
     """
     if args.db_connection_url:
         os.environ['DB_CONNECTION_URL'] = args.db_connection_url
-    elif (args.host and args.username and args.database):
+    elif (args.host and args.database):
         os.environ['DB_CONNECTION_URL'] = f'postgresql://{args.username}:{args.password}@{args.host}:{args.port}/{args.database}?{args.url_parameters}'
 
     db_string = os.environ.get('DB_CONNECTION_URL')
@@ -132,15 +134,54 @@ def upload_data(
         insert_method,
         db_connection,
         schema):
-    for chunk in pd.read_csv(source_full_path, chunksize=10000):
-        chunk.to_sql(
-            table_name,
-            con=db_connection,
-            index=False,
-            if_exists=insert_method,
-            method='multi',
-            chunksize=10000,
-            schema=schema)
+
+    if 'db.bit.io' in str(db_connection):
+        if os.path.getsize(source_full_path) < 250000000:
+            # Avoid chunksize if the file is small, since this is faster.
+            df = pd.read_csv(source_full_path)
+            df.to_sql(
+                table_name,
+                con=db_connection,
+                index=False,
+                if_exists=insert_method,
+                method=bitio_upload_method,
+                schema=schema)
+        else:
+            # Resort to chunks for larger files to avoid memory issues.
+            for index, chunk in enumerate(
+                    pd.read_csv(source_full_path, chunksize=10000)):
+
+                if insert_method == 'replace' and index > 0:
+                    # When using the bitio_upload_method, replace results
+                    # in each chunk replacing the last. This makes sure
+                    # the first chunk replaces, the rest append.
+                    chunk.to_sql(
+                        table_name,
+                        con=db_connection,
+                        index=False,
+                        if_exists='append',
+                        method=bitio_upload_method,
+                        chunksize=10000,
+                        schema=schema)
+                else:
+                    chunk.to_sql(
+                        table_name,
+                        con=db_connection,
+                        index=False,
+                        if_exists=insert_method,
+                        method=bitio_upload_method,
+                        chunksize=10000,
+                        schema=schema)
+    else:
+        for chunk in pd.read_csv(source_full_path, chunksize=10000):
+            chunk.to_sql(
+                table_name,
+                con=db_connection,
+                index=False,
+                if_exists=insert_method,
+                method='multi',
+                chunksize=10000,
+                schema=schema)
     print(f'{source_full_path} successfully uploaded to {table_name}.')
 
 
@@ -153,6 +194,32 @@ def create_db_connection(db_string):
         db_connection = create_engine(
             db_string)
     return db_connection
+
+
+def bitio_upload_method(table, conn, keys, data_iter):
+    """
+    Execute SQL statement inserting data
+
+    Parameters
+    ----------
+    table : pandas.io.sql.SQLTable
+    conn : sqlalchemy.engine.Engine or sqlalchemy.engine.Connection
+    keys : list of str
+        Column names
+    data_iter : Iterable that iterates the values to be inserted
+    """
+    # gets a DBAPI connection that can provide a cursor
+    dbapi_conn = conn.connection
+    with dbapi_conn.cursor() as cur:
+        s_buf = StringIO()
+        writer = csv.writer(s_buf)
+        writer.writerows(data_iter)
+        s_buf.seek(0)
+
+        columns = ', '.join(f'"{k}"' for k in keys)
+        table_name = f'"{table.schema}"."{table.name}"'
+        sql = f'COPY {table_name} ({columns}) FROM STDIN WITH CSV'
+        cur.copy_expert(sql=sql, file=s_buf)
 
 
 def main():
