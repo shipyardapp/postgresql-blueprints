@@ -128,6 +128,15 @@ def combine_folder_and_file_name(folder_name, file_name):
     return combined_name
 
 
+def determine_upload_method(db_connection):
+    if 'db.bit.io' in str(db_connection):
+        upload_method = bitio_upload_method
+    else:
+        upload_method = 'multi'
+
+    return upload_method
+
+
 def upload_data(
         source_full_path,
         table_name,
@@ -135,53 +144,42 @@ def upload_data(
         db_connection,
         schema):
 
-    if 'db.bit.io' in str(db_connection):
-        if os.path.getsize(source_full_path) < 250000000:
-            # Avoid chunksize if the file is small, since this is faster.
-            df = pd.read_csv(source_full_path)
-            df.to_sql(
-                table_name,
-                con=db_connection,
-                index=False,
-                if_exists=insert_method,
-                method=bitio_upload_method,
-                schema=schema)
-        else:
-            # Resort to chunks for larger files to avoid memory issues.
-            for index, chunk in enumerate(
-                    pd.read_csv(source_full_path, chunksize=10000)):
-
-                if insert_method == 'replace' and index > 0:
-                    # When using the bitio_upload_method, replace results
-                    # in each chunk replacing the last. This makes sure
-                    # the first chunk replaces, the rest append.
-                    chunk.to_sql(
-                        table_name,
-                        con=db_connection,
-                        index=False,
-                        if_exists='append',
-                        method=bitio_upload_method,
-                        chunksize=10000,
-                        schema=schema)
-                else:
-                    chunk.to_sql(
-                        table_name,
-                        con=db_connection,
-                        index=False,
-                        if_exists=insert_method,
-                        method=bitio_upload_method,
-                        chunksize=10000,
-                        schema=schema)
+    upload_method = determine_upload_method(db_connection)
+    if os.path.getsize(source_full_path) < 5000000:
+        # Avoid chunksize if the file is small, since this is faster.
+        df = pd.read_csv(source_full_path)
+        df.to_sql(
+            table_name,
+            con=db_connection,
+            index=False,
+            if_exists=insert_method,
+            method=upload_method,
+            schema=schema)
     else:
-        for chunk in pd.read_csv(source_full_path, chunksize=10000):
-            chunk.to_sql(
-                table_name,
-                con=db_connection,
-                index=False,
-                if_exists=insert_method,
-                method='multi',
-                chunksize=10000,
-                schema=schema)
+        # Resort to chunks for larger files to avoid memory issues.
+        for index, chunk in enumerate(
+                pd.read_csv(source_full_path, chunksize=10000)):
+
+            if insert_method == 'replace' and index > 0:
+                # First chunk replaces the table, the following chunks
+                # append to the end.
+                chunk.to_sql(
+                    table_name,
+                    con=db_connection,
+                    index=False,
+                    if_exists='append',
+                    method=upload_method,
+                    chunksize=10000,
+                    schema=schema)
+            else:
+                chunk.to_sql(
+                    table_name,
+                    con=db_connection,
+                    index=False,
+                    if_exists=insert_method,
+                    method=upload_method,
+                    chunksize=10000,
+                    schema=schema)
     print(f'{source_full_path} successfully uploaded to {table_name}.')
 
 
@@ -266,6 +264,8 @@ def main():
             db_connection=db_connection,
             schema=schema)
     db_connection.dispose()
+    executionTime = (time.time() - startTime)
+    print('Execution time in seconds: ' + str(executionTime))
 
 
 if __name__ == '__main__':
