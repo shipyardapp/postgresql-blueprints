@@ -145,7 +145,7 @@ def upload_data(
         schema):
 
     upload_method = determine_upload_method(db_connection)
-    if os.path.getsize(source_full_path) < 5000000:
+    if os.path.getsize(source_full_path) < 50000000:
         # Avoid chunksize if the file is small, since this is faster.
         df = pd.read_csv(source_full_path)
         df.to_sql(
