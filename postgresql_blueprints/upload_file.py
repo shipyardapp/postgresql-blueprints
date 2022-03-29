@@ -163,23 +163,16 @@ def upload_data(
             if insert_method == 'replace' and index > 0:
                 # First chunk replaces the table, the following chunks
                 # append to the end.
-                chunk.to_sql(
-                    table_name,
-                    con=db_connection,
-                    index=False,
-                    if_exists='append',
-                    method=upload_method,
-                    chunksize=10000,
-                    schema=schema)
-            else:
-                chunk.to_sql(
-                    table_name,
-                    con=db_connection,
-                    index=False,
-                    if_exists=insert_method,
-                    method=upload_method,
-                    chunksize=10000,
-                    schema=schema)
+                insert_method = 'append'
+
+            chunk.to_sql(
+                table_name,
+                con=db_connection,
+                index=False,
+                if_exists=insert_method,
+                method=upload_method,
+                chunksize=10000,
+                schema=schema)
     print(f'{source_full_path} successfully uploaded to {table_name}.')
 
 
