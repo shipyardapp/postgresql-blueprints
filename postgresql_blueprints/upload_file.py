@@ -187,6 +187,7 @@ def create_db_connection(db_string):
     if 'db.bit.io' in db_string:
         db_connection = create_engine(
             db_string,
+            connect_args={'sslmode': 'require'},
             isolation_level='AUTOCOMMIT')
     else:
         db_connection = create_engine(
@@ -264,8 +265,6 @@ def main():
             db_connection=db_connection,
             schema=schema)
     db_connection.dispose()
-    executionTime = (time.time() - startTime)
-    print('Execution time in seconds: ' + str(executionTime))
 
 
 if __name__ == '__main__':
