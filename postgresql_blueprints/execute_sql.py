@@ -60,6 +60,7 @@ def create_db_connection(db_string):
     if 'db.bit.io' in db_string:
         db_connection = create_engine(
             db_string,
+            connect_args={'sslmode': 'require'},
             isolation_level='AUTOCOMMIT')
     else:
         db_connection = create_engine(
