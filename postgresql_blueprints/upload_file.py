@@ -60,6 +60,10 @@ def get_args():
         '--db-connection-url',
         dest='db_connection_url',
         required=False)
+
+    parser.add_argument('--client-cert-path', dest='client_cert_path', required=False)
+    parser.add_argument('--client-key-path', dest='client_key_path', required=False)
+    parser.add_argument('--server-ca-path', dest='server_ca_path', required=False)
     args = parser.parse_args()
 
     if not args.db_connection_url and not (
@@ -231,7 +235,16 @@ def main():
 
     db_string = create_connection_string(args)
     try:
-        db_connection = create_db_connection(db_string)
+        if args.client_cert_path and args.client_key_path and args.server_ca_path:
+            connect_args = {
+                'sslmode': 'verify-ca',
+                'sslcert': args.client_cert_path,
+                'sslkey': args.client_key_path,
+                'sslrootcert': args.server_ca_path
+            }
+        else:
+            connect_args = None
+        db_connection = create_db_connection(db_string, connect_args=connect_args)
     except Exception as e:
         print(f'Failed to connect to database {args.database}')
         raise(e)
