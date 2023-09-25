@@ -1,12 +1,13 @@
-from sqlalchemy import create_engine
-from sqlalchemy.pool import NullPool
-import argparse
 import os
-import glob
 import re
-import pandas as pd
 import csv
+import glob
+import pandas as pd
+import argparse
+
 from io import StringIO
+from sqlalchemy.pool import NullPool
+from postgresql_blueprints.db_utils import setup_connection
 
 
 def get_args():
@@ -61,6 +62,7 @@ def get_args():
         dest='db_connection_url',
         required=False)
 
+    parser.add_argument("--sslmode", dest='sslmode', required=False)
     parser.add_argument('--client-cert-path', dest='client_cert_path', required=False)
     parser.add_argument('--client-key-path', dest='client_key_path', required=False)
     parser.add_argument('--server-ca-path', dest='server_ca_path', required=False)
@@ -83,20 +85,6 @@ def get_args():
         parser.error(
             '--username requires --host and --username')
     return args
-
-
-def create_connection_string(args):
-    """
-    Set the database connection string as an environment variable using the keyword arguments provided.
-    This will override system defaults.
-    """
-    if args.db_connection_url:
-        os.environ['DB_CONNECTION_URL'] = args.db_connection_url
-    elif (args.host and args.database):
-        os.environ['DB_CONNECTION_URL'] = f'postgresql://{args.username}:{args.password}@{args.host}:{args.port}/{args.database}?{args.url_parameters}'
-
-    db_string = os.environ.get('DB_CONNECTION_URL')
-    return db_string
 
 
 def find_all_local_file_names(source_folder_name):
@@ -147,7 +135,6 @@ def upload_data(
         insert_method,
         db_connection,
         schema):
-
     upload_method = determine_upload_method(db_connection)
     if os.path.getsize(source_full_path) < 50000000:
         # Avoid chunksize if the file is small, since this is faster.
@@ -178,18 +165,6 @@ def upload_data(
                 chunksize=10000,
                 schema=schema)
     print(f'{source_full_path} successfully uploaded to {table_name}.')
-
-
-def create_db_connection(db_string):
-    if 'db.bit.io' in db_string:
-        db_connection = create_engine(
-            db_string,
-            connect_args={'sslmode': 'require'},
-            isolation_level='AUTOCOMMIT')
-    else:
-        db_connection = create_engine(
-            db_string)
-    return db_connection
 
 
 def bitio_upload_method(table, conn, keys, data_iter):
@@ -233,21 +208,12 @@ def main():
     else:
         schema = args.schema
 
-    db_string = create_connection_string(args)
     try:
-        if args.client_cert_path and args.client_key_path and args.server_ca_path:
-            connect_args = {
-                'sslmode': 'verify-ca',
-                'sslcert': args.client_cert_path,
-                'sslkey': args.client_key_path,
-                'sslrootcert': args.server_ca_path
-            }
-        else:
-            connect_args = None
-        db_connection = create_db_connection(db_string, connect_args=connect_args)
+        db_connection = setup_connection(args)
+
     except Exception as e:
         print(f'Failed to connect to database {args.database}')
-        raise(e)
+        raise e
 
     if source_file_name_match_type == 'regex_match':
         file_names = find_all_local_file_names(source_folder_name)
