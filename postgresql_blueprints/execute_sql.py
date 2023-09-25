@@ -1,8 +1,9 @@
+import os
+import argparse
+
 from sqlalchemy import text
 from sqlalchemy.pool import NullPool
-from postgresql_blueprints.db_utils import setup_connection
-import argparse
-import os
+from db_utils import setup_connection
 
 
 def get_args():
