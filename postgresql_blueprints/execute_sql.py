@@ -3,8 +3,7 @@ import argparse
 
 from sqlalchemy import text
 from sqlalchemy.pool import NullPool
-from db_utils import setup_connection
-
+from postgresql_blueprints.db_utils import setup_connection
 
 def get_args():
     parser = argparse.ArgumentParser()
