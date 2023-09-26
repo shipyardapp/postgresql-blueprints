@@ -126,7 +126,7 @@ def main():
             db_connection=db_connection,
             destination_file_path=destination_full_path,
             file_header=file_header)
-        db_connection.dispose()
+        db_connection.close()
     except Exception as e:
         print(f'Failed to connect to database {args.database}')
         raise e
