@@ -7,7 +7,7 @@ import argparse
 
 from io import StringIO
 from sqlalchemy.pool import NullPool
-from db_utils import setup_connection
+from postgresql_blueprints.db_utils import setup_connection
 
 
 def get_args():
