@@ -118,18 +118,17 @@ def main():
         os.makedirs(destination_folder_name)
 
     try:
-        db_connection = setup_connection(args)
-        db_connection.execution_options(stream_results=True)
+        db_connection = setup_connection(args).execution_options(stream_results=True)
+        create_csv(
+            query=query,
+            db_connection=db_connection,
+            destination_file_path=destination_full_path,
+            file_header=file_header)
     except Exception as e:
         print(f'Failed to connect to database {args.database}')
         raise e
-
-    create_csv(
-        query=query,
-        db_connection=db_connection,
-        destination_file_path=destination_full_path,
-        file_header=file_header)
-    db_connection.dispose()
+    finally:
+        db_connection.dispose()
 
 
 if __name__ == '__main__':
