@@ -118,7 +118,9 @@ def main():
         os.makedirs(destination_folder_name)
 
     try:
-        db_connection = setup_connection(args).execution_options(stream_results=True)
+
+        db_connection = setup_connection(args)
+        db_connection = db_connection.connect().execution_options(stream_results=True)
         create_csv(
             query=query,
             db_connection=db_connection,
