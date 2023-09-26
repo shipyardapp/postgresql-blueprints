@@ -1,28 +1,30 @@
 from sqlalchemy import create_engine
 
 
-def setup_connection(args):
+def setup_connection(args, autocommit=True):
     """
     Set up a connection to the database using the keyword arguments provided.
     This will override system defaults.
 
     :param args: keyword arguments provided by the user
+    :param autocommit: whether to autocommit the connection
     :return: a connection to the database
     """
     db_string = create_connection_string(args)
     if connect_args := format_connect_args(args):
-        return create_db_connection(db_string, connect_args=connect_args)
+        return create_db_connection(db_string, connect_args=connect_args, autocommit=autocommit)
     else:
-        return create_db_connection(db_string)
+        return create_db_connection(db_string, autocommit=autocommit)
 
 
-def create_db_connection(db_string, connect_args=None):
+def create_db_connection(db_string, connect_args=None, autocommit=True):
     """
     Create a connection to the database using the connection string provided.
     This will override system defaults.
 
     :param db_string: connection string to the database
     :param connect_args: additional arguments to pass to the connection
+    :param autocommit: whether to autocommit the connection
     :return: a connection to the database
     """
     if 'db.bit.io' in db_string:
@@ -31,10 +33,12 @@ def create_db_connection(db_string, connect_args=None):
             connect_args={'sslmode': 'require'},
             isolation_level='AUTOCOMMIT',
         )
-    elif connect_args:
+    elif connect_args and autocommit:
         return create_engine(
             db_string, connect_args=connect_args, isolation_level='AUTOCOMMIT'
         )
+    elif connect_args and not autocommit:
+        return create_engine(db_string, connect_args=connect_args)
     else:
         return create_engine(db_string)
 
